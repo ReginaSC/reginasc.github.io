@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="按退学日期和寝室人数计算学年可退学费与住宿费。">
+  <title>学费退费计算器</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e40af'/%3E%3Cpath d='M14 23 32 14l18 9-18 9-18-9Zm6 7v11c7 7 17 7 24 0V30' fill='none' stroke='white' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      background: #eef3fb;
+      color: #17213b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(59, 130, 246, .16), transparent 30rem),
+        linear-gradient(145deg, #f8fbff 0%, #e8effa 100%);
+    }
+
+    main {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    header { margin-bottom: 24px; }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #2456a6;
+      font-size: .875rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.1;
+      letter-spacing: -.04em;
+    }
+
+    .intro {
+      max-width: 680px;
+      margin: 12px 0 0;
+      color: #55617a;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(340px, 1.1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid rgba(104, 125, 164, .22);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, .9);
+      box-shadow: 0 18px 60px rgba(30, 64, 175, .10);
+    }
+
+    .form-panel { padding: 28px; }
+
+    .field + .field { margin-top: 22px; }
+
+    label, legend {
+      display: block;
+      margin-bottom: 9px;
+      color: #293650;
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      min-height: 50px;
+      border: 1px solid #bdc8db;
+      border-radius: 12px;
+      background: #fff;
+      padding: 0 14px;
+      color: #17213b;
+      font: inherit;
+    }
+
+    input[type="date"]:focus-visible,
+    input[type="radio"]:focus-visible + span {
+      outline: 3px solid rgba(37, 99, 235, .28);
+      outline-offset: 2px;
+    }
+
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .dorms {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .dorm-option { cursor: pointer; }
+    .dorm-option input { position: absolute; opacity: 0; }
+
+    .dorm-option span {
+      display: flex;
+      min-height: 68px;
+      flex-direction: column;
+      justify-content: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 13px;
+      background: #fff;
+      transition: border-color .18s, background .18s, transform .18s;
+    }
+
+    .dorm-option span strong { font-size: 1rem; }
+    .dorm-option span small { margin-top: 3px; color: #6b7280; font-size: .82rem; }
+    .dorm-option:hover span { transform: translateY(-1px); }
+
+    .dorm-option input:checked + span {
+      border-color: #2563eb;
+      background: #edf4ff;
+      box-shadow: inset 0 0 0 1px #2563eb;
+    }
+
+    .rule-note {
+      margin: 22px 0 0;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 18px;
+      color: #667085;
+      font-size: .88rem;
+      line-height: 1.65;
+    }
+
+    .result-panel {
+      overflow: hidden;
+      background: #102a56;
+      color: #fff;
+    }
+
+    .result-main {
+      padding: 32px;
+      background:
+        linear-gradient(135deg, rgba(96, 165, 250, .19), transparent 65%),
+        #102a56;
+    }
+
+    .result-label { margin: 0; color: #c9dcff; font-size: .95rem; }
+
+    .amount {
+      margin: 8px 0 2px;
+      font-size: clamp(3.4rem, 9vw, 5.6rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -.055em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .amount::before { content: "¥"; margin-right: 7px; font-size: .42em; vertical-align: top; line-height: 1.7; }
+
+    .academic-year { margin: 12px 0 0; color: #a9c7fb; font-size: .92rem; }
+
+    .breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px dashed rgba(255, 255, 255, .25);
+      background: rgba(3, 15, 39, .28);
+    }
+
+    .metric { padding: 20px 18px; text-align: center; }
+    .metric + .metric { border-left: 1px solid rgba(255, 255, 255, .12); }
+    .metric span { display: block; color: #a9bddf; font-size: .78rem; }
+    .metric strong { display: block; margin-top: 6px; font-size: 1rem; font-variant-numeric: tabular-nums; }
+
+    .calculation {
+      margin: 0;
+      padding: 21px 24px 23px;
+      background: #fff;
+      color: #46536b;
+      font-size: .9rem;
+      line-height: 1.65;
+    }
+
+    .calculation strong { color: #17213b; }
+
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 620px); padding: 28px 0; }
+      .workspace { grid-template-columns: 1fr; }
+      .form-panel, .result-main { padding: 23px; }
+      .breakdown { grid-template-columns: 1fr; }
+      .metric { display: flex; justify-content: space-between; align-items: center; text-align: left; }
+      .metric + .metric { border-top: 1px solid rgba(255, 255, 255, .12); border-left: 0; }
+      .metric strong { margin-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">学年费用核算</p>
+      <h1>学费退费计算器</h1>
+      <p class="intro">选择退学日期和寝室人数，即时计算本学年可退金额。计费学期从 9 月开始，2 月和 8 月不计费。</p>
+    </header>
+
+    <div class="workspace">
+      <section class="panel form-panel" aria-labelledby="input-title">
+        <h2 id="input-title" style="margin:0 0 22px;font-size:1.2rem">退学信息</h2>
+        <div class="field">
+          <label for="withdrawal-date">退学日期</label>
+          <input id="withdrawal-date" type="date" value="2026-07-06" required>
+        </div>
+
+        <fieldset class="field">
+          <legend>寝室人数</legend>
+          <div class="dorms">
+            <label class="dorm-option"><input type="radio" name="dorm" value="10"><span><strong>10 人寝</strong><small>¥480 / 学年</small></span></label>
+            <label class="dorm-option"><input type="radio" name="dorm" value="8"><span><strong>8 人寝</strong><small>¥600 / 学年</small></span></label>
+            <label class="dorm-option"><input type="radio" name="dorm" value="6" checked><span><strong>6 人寝</strong><small>¥800 / 学年</small></span></label>
+            <label class="dorm-option"><input type="radio" name="dorm" value="4"><span><strong>4 人寝</strong><small>¥1,200 / 学年</small></span></label>
+          </div>
+        </fieldset>
+
+        <p class="rule-note">每学年按 10 个计费月核算：9、10、11、12、1、3、4、5、6、7 月。退学当月 15 日及以后按整月计；15 日以前按已上学天数计。</p>
+      </section>
+
+      <section class="panel result-panel" aria-live="polite" aria-labelledby="result-title">
+        <div class="result-main">
+          <p class="result-label" id="result-title">预计可退金额</p>
+          <p class="amount" id="refund">548</p>
+          <p class="academic-year" id="academic-year">2025—2026 学年</p>
+        </div>
+        <div class="breakdown">
+          <div class="metric"><span>学费</span><strong>¥6,000</strong></div>
+          <div class="metric"><span>住宿费</span><strong id="dorm-fee">¥800</strong></div>
+          <div class="metric"><span>每月费用</span><strong id="monthly-fee">¥680</strong></div>
+        </div>
+        <p class="calculation" id="calculation"><strong>计算过程：</strong>7 月未满半月，按 6 天计费；¥680 − ¥680 ÷ 31 × 6 = ¥548.39，四舍五入为 ¥548。</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const TUITION = 6000;
+    const DORM_FEES = { 10: 480, 8: 600, 6: 800, 4: 1200 };
+    const CHARGE_MONTHS = [9, 10, 11, 12, 1, 3, 4, 5, 6, 7];
+    const money = value => new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 }).format(value);
+
+    function calculateRefund(dateText, dormCapacity) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText) || !DORM_FEES[dormCapacity]) throw new Error("请输入有效日期和寝室人数");
+      const [year, month, day] = dateText.split("-").map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      if (day < 1 || day > daysInMonth) throw new Error("请输入有效日期");
+
+      const dormFee = DORM_FEES[dormCapacity];
+      const total = TUITION + dormFee;
+      const monthly = total / 10;
+      const index = CHARGE_MONTHS.indexOf(month);
+      let charged;
+      let detail;
+
+      if (month === 2) {
+        charged = monthly * 5;
+        detail = `2 月不计费；已完成 5 个计费月，剩余 5 个月可退`;
+      } else if (month === 8) {
+        charged = total;
+        detail = "8 月不计费；本学年 10 个计费月已全部结束";
+      } else if (index >= 0 && day >= 15) {
+        charged = monthly * (index + 1);
+        detail = `${month} 月已满半月，按整月计费；已计 ${index + 1} 个月`;
+      } else if (index >= 0) {
+        const dailyCharge = monthly / daysInMonth * day;
+        charged = monthly * index + dailyCharge;
+        detail = `${month} 月未满半月，按 ${day} 天计费；¥${money(monthly)} ÷ ${daysInMonth} × ${day} = ¥${money(dailyCharge)}`;
+      } else {
+        throw new Error("日期不在学年核算范围内");
+      }
+
+      const rawRefund = Math.max(0, total - charged);
+      const refund = Math.round(rawRefund + Number.EPSILON);
+      const academicStart = month >= 9 ? year : year - 1;
+      return { tuition: TUITION, dormFee, monthly, rawRefund, refund, academicStart, detail };
+    }
+
+    const dateInput = document.querySelector("#withdrawal-date");
+    const dormInputs = document.querySelectorAll('input[name="dorm"]');
+
+    function render(dateText = dateInput.value, dormCapacity = Number(document.querySelector('input[name="dorm"]:checked').value)) {
+      const result = calculateRefund(dateText, dormCapacity);
+      document.querySelector("#refund").textContent = money(result.refund);
+      document.querySelector("#dorm-fee").textContent = `¥${money(result.dormFee)}`;
+      document.querySelector("#monthly-fee").textContent = `¥${money(result.monthly)}`;
+      document.querySelector("#academic-year").textContent = `${result.academicStart}—${result.academicStart + 1} 学年`;
+      document.querySelector("#calculation").innerHTML = `<strong>计算过程：</strong>${result.detail}；原始可退 ¥${money(result.rawRefund)}，四舍五入为 ¥${money(result.refund)}。`;
+      return result;
+    }
+
+    dateInput.addEventListener("input", () => dateInput.value && render());
+    dormInputs.forEach(input => input.addEventListener("change", () => render()));
+    render();
+
+    console.assert(calculateRefund("2026-07-06", 6).refund === 548, "验算失败：7 月 6 日、6 人寝应退 548 元");
+
+    if (document.modelContext?.registerTool) {
+      const tool = {
+        name: "calculate_tuition_refund",
+        title: "计算学费退费",
+        description: "根据退学日期和寝室人数计算并显示本学年可退金额。",
+        inputSchema: {
+          type: "object",
+          properties: {
+            withdrawalDate: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", description: "退学日期，格式为 YYYY-MM-DD" },
+            dormCapacity: { type: "integer", enum: [10, 8, 6, 4], description: "寝室人数" }
+          },
+          required: ["withdrawalDate", "dormCapacity"],
+          additionalProperties: false
+        },
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        execute(input) {
+          if (!input || typeof input.withdrawalDate !== "string" || ![10, 8, 6, 4].includes(input.dormCapacity)) throw new Error("请输入有效日期和寝室人数");
+          dateInput.value = input.withdrawalDate;
+          document.querySelector(`input[name="dorm"][value="${input.dormCapacity}"]`).checked = true;
+          const result = render(input.withdrawalDate, input.dormCapacity);
+          return { refund: result.refund, rawRefund: Number(result.rawRefund.toFixed(2)), academicYear: `${result.academicStart}-${result.academicStart + 1}` };
+        }
+      };
+      try { Promise.resolve(document.modelContext.registerTool(tool)).catch(console.error); } catch (error) { console.error(error); }
+    }
+  </script>
+</body>
+</html>
+
